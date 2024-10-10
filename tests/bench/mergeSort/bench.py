@@ -13,7 +13,7 @@ def benchmark(i):
 i_values = []
 times = []
 
-for i in range(1, 11):
+for i in range(1, 41):
     run_times = sorted([benchmark(i) for _ in range(5)])
     middle_three_avg = np.mean(run_times[1:4])  # Take the average of the middle 3 times
     times.append(middle_three_avg)

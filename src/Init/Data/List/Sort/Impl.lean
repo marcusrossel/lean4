@@ -234,4 +234,46 @@ end
   funext
   rw [mergeSortTR₂, mergeSortTR₂_run_eq_mergeSort]
 
+/--
+Faster version of `mergeSortTR₂`, which uses insertion sort for lists with fewer than 5 elements.
+-/
+-- Per the benchmark in `tests/bench/mergeSort/` (which averages over 4 use cases: already sorted
+-- lists, reverse sorted lists, almost sorted lists, and random lists), for lists of length 10^6,
+-- `mergeSortTR₃` is about ???% faster than `mergeSortTR₂`.
+def mergeSortTR₃ (cutoff : Nat) (le : α → α → Bool) (l : List α) : List α :=
+  run ⟨l, rfl⟩
+where
+  run : {n : Nat} → { l : List α // l.length = n } → List α
+  | 0, ⟨[], _⟩    => []
+  | 1, ⟨[a], _⟩   => [a]
+  | n@(_ + 2), xs =>
+    if n < cutoff then
+      insertionSort xs
+    else
+      let (l, r) := splitRevInTwo xs
+      mergeTR le (run' l) (run r)
+  run' : {n : Nat} → { l : List α // l.length = n } → List α
+  | 0, ⟨[], _⟩  => []
+  | 1, ⟨[a], _⟩ => [a]
+  | n@(_ + 2), xs   =>
+    if n < cutoff then
+      insertionSort' xs
+    else
+      let (l, r) := splitRevInTwo' xs
+      mergeTR le (run' r) (run l)
+  insertionSort : List α → List α
+  | []     => []
+  | [a]    => [a]
+  | b :: l => orderedInsert b (insertionSort l)
+  orderedInsert (a : α) : List α → List α
+  | []          => [a]
+  | bl@(b :: l) => if le a b then a :: bl else b :: orderedInsert a l
+  insertionSort' : List α → List α
+  | []     => []
+  | [a]    => [a]
+  | b :: l => orderedInsert' b (insertionSort' l)
+  orderedInsert' (a : α) : List α → List α
+  | []          => [a]
+  | bl@(b :: l) => if le a b then b :: orderedInsert a l else a :: bl -- TODO: Is this correct?
+
 end List.MergeSort.Internal
